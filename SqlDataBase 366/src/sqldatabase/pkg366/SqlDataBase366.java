@@ -39,20 +39,28 @@ public class SqlDataBase366 {
 
             Scanner scan = new Scanner(System.in);
             String selection = "";
+            String username = "";
             do {
-                System.out.println("Please make a selection: "
+                //Username
+                System.out.println("Please enter a Username");
+                username = scan.nextLine();
+                
+                //Ask for what they want to do next
+                System.out.println("Welcome " + username + ", Please make a selection: "
                         + "\n     list - list the availible tests "
                         + "\n     select [testname] - take a test "
                         + "\n     q - quit the application");
                 selection = scan.nextLine();
-
+                
+                //For a List, List the test's available
                 if (selection.toLowerCase().equals("list")) {
                     System.out.println("list");
                     DBConnect.connectToDatabase();
                     String testList = "select * from Test";
                     PreparedStatement pst = DBConnect.getConnection().prepareStatement(testList);
                     ResultSet result = pst.executeQuery();
-
+                    
+                    //while tests are available
                     while (result.next()) {
                         Test rTest = new Test();
                         rTest.setTest_ID(result.getInt("test_ID"));
@@ -62,6 +70,7 @@ public class SqlDataBase366 {
                     DBConnect.closeConnection();
 
                 }
+                //If its select
                 if (selection.toLowerCase().contains("select")) {
                     System.out.println("Select");
                     String[] entered = selection.split(" ");
