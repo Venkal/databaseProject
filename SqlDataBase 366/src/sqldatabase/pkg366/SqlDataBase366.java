@@ -89,7 +89,7 @@ public class SqlDataBase366 {
                                     rTest.setTest_ID(result.getInt("test_ID"));
                                     rTest.setTest_name(result.getString("test_name"));
                                     System.out.println(rTest.getTest_ID() + " " + rTest.getTest_name());
-                                    
+
                                 }
                                 System.out.println("\n\nPress Enter to Continue");
                                 scan.nextLine();
@@ -414,6 +414,122 @@ public class SqlDataBase366 {
         }
         DBConnect.closeConnection();
         return null;
+    }
+
+    public static void createTest(int userID) throws SQLException {
+        DBConnect.connectToDatabase();
+        Scanner scan = new Scanner(System.in);
+        System.out.println("Enter the name of your new test: ");
+        String testName = scan.nextLine();
+
+        String testQuery = "SELECT test_name FROM test WHERE test_name like ?";
+        PreparedStatement tstmt = DBConnect.getConnection().prepareStatement(testQuery);
+        String sqlTestName = "" + testName + "";
+        tstmt.setString(1, sqlTestName);
+        ResultSet testResult = tstmt.executeQuery();
+
+        Test test = new Test();
+        int totalScore = 0;
+
+        String another = "";
+        if (!testResult.next()) {
+            //insert test for the ID
+            test.setTest_name(testName);
+            test.setCreator_ID(userID);
+            String inTestQ = "INSERT INTO test(creator_id, test_name) VALUES(" + userID + ", ?)";
+            PreparedStatement inTstmt = DBConnect.getConnection().prepareStatement(inTestQ);
+            inTstmt.setString(1, test.getTest_name());
+            inTstmt.executeUpdate();
+            
+            String testQ = "SELECT test_id FROM test WHERE test_name like ?";
+            PreparedStatement tqstmt = DBConnect.getConnection().prepareStatement(testQ);
+            tqstmt.setString(1, test.getTest_name());
+            ResultSet tResult = tqstmt.executeQuery();
+            while(tResult.next()){
+                test.setTest_ID(tResult.getInt("test_id"));
+            }
+            
+            do {
+                Question question = new Question();
+                System.out.println("Enter a question.");
+                question.setQuestion_text(scan.nextLine());
+                
+                //typesafe for points
+                boolean isValidInput = false;
+
+                while (!isValidInput) {
+                    System.out.println("How many points will this question be worth?");
+
+                    if (scan.hasNextInt()) {
+                        int pts = scan.nextInt();
+                        question.setPoints(pts);
+                        totalScore += pts;
+                        isValidInput = true;
+                    } else {
+                        System.out.println("Invalid input. Please enter an integer.");
+                    }
+                }
+                
+                boolean correctYet = false;
+                int numAnswers = 0;
+                String anotherA = "";
+                ArrayList<Answer> answers = new ArrayList<>();
+                
+                do{
+                    Answer answer = new Answer();
+                    System.out.println("Enter an answer");
+                    answer.setAnswer_text(scan.nextLine());
+                    if(!correctYet){
+                        System.out.println("Is this the correct answer Enter \"yes\" or \"no\" (there can only be one correct answer for a question)");
+                        if(scan.nextLine().toLowerCase().equals("yes")){
+                            System.out.println("This answer is the correct one for this question.");
+                            correctYet = true;
+                            answer.setIs_Correct(true);
+                        }
+                        else{
+                            System.out.println("This answer is not the correct one for this question.");
+                            answer.setIs_Correct(false);
+                        }
+                    }else{
+                        answer.setIs_Correct(false);
+                    }
+                    answers.add(answer);
+                    
+                    numAnswers++;
+                    System.out.println("Would you like to add another answer? Enter \"yes\" or \"no\"");
+                    anotherA = scan.nextLine();
+                } while(anotherA.toLowerCase().equals("yes"));
+                
+                String inQuestionQ = "INSERT INTO question(test_id, question_text, num_answers, points) VALUES( " + test.getTest_name() + ", ?, " + numAnswers + ", " + question.getPoints() + ")";
+                PreparedStatement inQstmt = DBConnect.getConnection().prepareStatement(inQuestionQ);
+                inQstmt.setString(1, question.getQuestion_text());
+                inQstmt.executeUpdate();
+                
+                String questionQuery = "SELECT question_id FROM question WHERE test_id = " + test.getTest_ID() + " AND question_text like ?";
+                PreparedStatement qQstmt = DBConnect.getConnection().prepareStatement(questionQuery);
+                qQstmt.setString(1, question.getQuestion_text());
+                ResultSet questionResult = qQstmt.executeQuery();
+                while(questionResult.next()){
+                    question.setQuestion_ID(questionResult.getInt("question_id"));
+                }
+                for(Answer a: answers){
+                    String inAnswerQuery = "INSERT INTO answer(question_id, answer_text, is_correct) VALUES(" + question.getQuestion_ID() +", ?, " + a.getIs_Correct() +")";
+                    PreparedStatement aQstmt = DBConnect.getConnection().prepareStatement(inAnswerQuery);
+                    aQstmt.setString(1, a.getAnswer_text());
+                    aQstmt.executeUpdate();
+                }
+                System.out.println("Would you like to add another question? Enter \"yes\" or \"no\"");
+                another = scan.nextLine();
+            } while (another.toLowerCase().equals("yes"));
+            
+            String updateTest = "UPDATE test SET possible_score = " + totalScore + " WHERE test_id = " + test.getTest_ID();
+            PreparedStatement uTstmt = DBConnect.getConnection().prepareStatement(updateTest);
+            uTstmt.executeUpdate();
+        }
+
+        System.out.println("That test already exists.");
+
+        DBConnect.closeConnection();
     }
 
 }
