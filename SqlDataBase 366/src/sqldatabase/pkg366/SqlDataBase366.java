@@ -16,6 +16,7 @@ import java.util.*;
  * @author carte
  */
 public class SqlDataBase366 {
+    static boolean pass = false;
 
     /**
      * @param args the command line arguments
@@ -52,7 +53,7 @@ public class SqlDataBase366 {
                         + "\n\nPlease type in \"Login\" or \"New\" or \"Exit\" to continue");
                 selection = scan.nextLine();
                 if (selection.toLowerCase().equals("login")) {
-                    USER = userLogin(username, password, scan, USER);
+                    USER = userLogin(username, password, scan, USER, pass);
                 }
 
                 //Create New User
@@ -60,11 +61,12 @@ public class SqlDataBase366 {
                     addUser(username, password, scan);
 
                 }
-                //IF LOGIN WENT THROUGH
-                if (USER.getUsername() != null) {
-                    do {
+                try{
+                    //IF LOGIN WENT THROUGHUSER.getUsername()
+                    if (USER.getUsername()!=null) {
+                        do {
                         //Ask for what they want to do next
-                        System.out.println("Welcome " + username + ", Please make a selection: "
+                        System.out.println("Welcome " + USER.getUsername() + ", Please make a selection: "
                                 + "\n     list - list the availible tests "
                                 + "\n     select [testname] - take a test "
                                 + "\n     Exit - quit the application");
@@ -102,17 +104,21 @@ public class SqlDataBase366 {
                             title.trim();
                             System.out.println(title);
                         }
-                        System.out.println("Press enter to continue");
-                        scan.nextLine();
+                        System.out.println("\n");
                     } while (!selection.toLowerCase().equals("exit"));
                     //Close Connection after Done
                     DBConnect.closeConnection();
                     //Logout User
                     USER.setUsername(null);
                     USER.setPassword(null);
+                    selection = "";
+                    }
                 }
-                System.out.println("Press enter to continue");
-                scan.nextLine();
+                catch(NullPointerException npe){
+                    System.out.println("Problem occured with Username and Password, Please try again");
+                }
+                
+                System.out.println("\n");
             } while (!selection.toLowerCase().equals("exit"));
 
             DBConnect.closeConnection();
@@ -172,7 +178,7 @@ public class SqlDataBase366 {
 
     }
 
-    public static Users userLogin(String username, String password, Scanner scan, Users USER) throws SQLException, Exception {
+    public static Users userLogin(String username, String password, Scanner scan, Users USER, boolean pass) throws SQLException, Exception {
         System.out.println("Please enter your Username");
         username = scan.nextLine();
         System.out.println("Please enter the password for the User: " + username);
@@ -184,6 +190,7 @@ public class SqlDataBase366 {
         PreparedStatement pst = DBConnect.getConnection().prepareStatement(userList);
         pst.setString(1, username);
         pst.setString(2, password);
+        try{
         ResultSet userResult = pst.executeQuery();
         while (userResult.next()) {
             Users user = new Users();
@@ -193,9 +200,14 @@ public class SqlDataBase366 {
             USER = user;
         }
         if (USER.getUsername() == null && USER.getPassword() == null) {
-            throw new Exception("Something is wrong with the Username and Password");
+            throw new SQLException();
         }
+        pass = true;
         return USER;
+        } catch(SQLException sqle){
+            System.out.println("Username and Password may be Incorrect");
+        }
+        return null;
     }
 
 }
