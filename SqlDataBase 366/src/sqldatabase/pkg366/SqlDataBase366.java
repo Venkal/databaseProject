@@ -7,6 +7,7 @@ package sqldatabase.pkg366;
 
 import java.sql.SQLException;
 import java.sql.*;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
@@ -73,7 +74,10 @@ public class SqlDataBase366 {
                                     + "\n     select [testname] - take a test "
                                     + "\n     Exit - quit the application"
                                     + "\n     Edit - Edit the username and password for the current user"
-                                    + "\n     Create - Walks you through creating a test");
+                                    + "\n     Create - Walks you through creating a test"
+                                    + "\n     Del - Delete tests created by you"
+                                    + "\n     View - View Your Scores");
+                            
                             selection = scan.nextLine();
 
                             //For a List, List the test's available
@@ -171,6 +175,76 @@ public class SqlDataBase366 {
                             }
                             if(selection.toLowerCase().equals("create")){
                                 createTest(USER.getUser_ID());
+                            }
+                            
+                            if(selection.toLowerCase().equals("del")){
+                                System.out.println("Here are the test's you have created: \n");
+                                DBConnect.connectToDatabase();
+                                String getTestsByUser = "SELECT test_name FROM test WHERE creator_id = "+USER.getUser_ID();
+                                PreparedStatement pst = DBConnect.getConnection().prepareStatement(getTestsByUser);
+                                ResultSet rs = pst.executeQuery();
+                                while(rs.next()){
+                                    System.out.println(rs.getString("test_name"));
+                                
+                                }
+                                System.out.println("Press Enter to Continue");
+                                scan.nextLine();
+                                System.out.println("\nPlease enter the name of the Test you would like to delete");
+                                String deleteTest = scan.nextLine();
+                                String getTestIDforDeletion = "SELECT * FROM test WHERE test_name like ?";
+                                PreparedStatement td = DBConnect.getConnection().prepareStatement(getTestIDforDeletion);
+                                td.setString(1, deleteTest);
+                                ResultSet rsd = td.executeQuery();
+                                Test delTest = new Test();
+                                while(rsd.next()){
+                                    Test test = new Test();
+                                    test.setTest_ID(rsd.getInt("test_id"));
+                                    delTest = test;
+                                }
+                                //DELETE FUNCTIONS
+                                String delSCORE = "DELETE FROM score WHERE test_id = "+delTest.getTest_ID();
+                                String delANSWER = "DELETE FROM answer WHERE question_id IN ( SELECT question_id FROM question WHERE test_id = "+delTest.getTest_ID()+")";
+                                String delQUESTION = "DELETE FROM question WHERE test_id = "+delTest.getTest_ID();
+                                String delTEST = "DELETE FROM test WHERE test_id = "+delTest.getTest_ID();
+                                PreparedStatement delScore = DBConnect.getConnection().prepareStatement(delSCORE);
+                                PreparedStatement delAnswer = DBConnect.getConnection().prepareStatement(delANSWER);
+                                PreparedStatement delQuestion = DBConnect.getConnection().prepareStatement(delQUESTION);
+                                PreparedStatement deltest = DBConnect.getConnection().prepareStatement(delTEST);
+                                
+                                try{
+                                    delScore.executeQuery();
+                                }catch(Exception e){
+                                    System.out.println("Scores' Deleted");
+                                }
+                                try{
+                                    delAnswer.executeQuery();
+                                }catch(Exception e){
+                                    System.out.println("Answers' Deleted");
+                                }
+                                try{
+                                    delQuestion.executeQuery();
+                                }catch(Exception e){
+                                    System.out.println("Questions' Deleted");
+                                }
+                                try{
+                                    deltest.executeQuery();
+                                }catch(Exception e){
+                                    System.out.println("Test Deleted");
+                                }
+                                
+                                System.out.println("Test fully Deleted");
+                                DBConnect.closeConnection();
+                            }
+                            
+                            if(selection.toLowerCase().equals("view")){
+                                DBConnect.connectToDatabase();
+                                String getTestsByUser = "SELECT user_id, score.test_id, score, test_name, possible_score FROM score LEFT JOIN test ON score.test_id = test.test_id WHERE user_id = "+USER.getUser_ID();
+                                PreparedStatement pst = DBConnect.getConnection().prepareStatement(getTestsByUser);
+                                ResultSet rs = pst.executeQuery();
+                                while(rs.next()){
+                                    System.out.println(rs.getString("test_name") + ": "+ rs.getString("score")+"/"+rs.getString("possible_score"));
+                                    scan.nextLine();
+                                }
                             }
                             
                             System.out.println("\n");
@@ -287,14 +361,14 @@ public class SqlDataBase366 {
                 answers.add(answer);
             }
             //variable for the correct answer char (a, b, c, ect...)
-            char correctAnswer = '\n';
+            ArrayList<String> correctAnswer = new ArrayList<>();
             //display the answers to the user
             for (Answer answer : answers) {
                 char a = (char) (answers.indexOf(answer) + 97);
                 System.out.println("    " + a + ") " + answer.getAnswer_text());
                 //set the correct answer
                 if (answer.getIs_Correct()) {
-                    correctAnswer = a;
+                    correctAnswer.add(String.valueOf(a));
                 }
             }
             //retreive the user 
@@ -306,12 +380,19 @@ public class SqlDataBase366 {
                 fAnswer = scan.nextLine();
             }
             char charAnswer = fAnswer.charAt(0);
-
-            if (charAnswer == correctAnswer) {
-                System.out.println("Thats Correct!!!");
-                score += question.getPoints();
-            } else {
-                System.out.println("Sorry, that was incorrect.");
+            boolean answerRight = false;
+            
+            for(String s : correctAnswer) {
+                if(s.equals(String.valueOf(charAnswer))){
+                    answerRight = true;
+                }
+            } 
+            if(answerRight){
+                System.out.println("That's Correct!!! (•̀ᴗ•́)و ");
+                 score += question.getPoints();
+            }
+            else{
+                System.out.println("That's Wrong ¯\\_(ツ)_/¯ ");
             }
         }
         System.out.println("You completed the test with a score of : " + score + "/" + test.getPossible_score());
@@ -322,8 +403,8 @@ public class SqlDataBase366 {
             upstmt.executeUpdate();
         }
 
-        System.out.println("SELECT SCORE");
-        System.out.println(userID + " " + test.getTest_ID());
+        //System.out.println("SELECT SCORE");
+        //System.out.println(userID + " " + test.getTest_ID());
         String scoreStatement = "SELECT * FROM score WHERE user_id = " + userID + " AND test_id = " + test.getTest_ID();
         PreparedStatement scorestmt = DBConnect.getConnection().prepareStatement(scoreStatement);
         ResultSet scoreResult = scorestmt.executeQuery();
@@ -349,7 +430,8 @@ public class SqlDataBase366 {
             instmt.executeUpdate();
             //System.out.println("INSTERT SCORE");      Bug Testing
         }
-
+        System.out.println("Press Enter to continue");
+        scan.nextLine();
         DBConnect.closeConnection();
     }
 
