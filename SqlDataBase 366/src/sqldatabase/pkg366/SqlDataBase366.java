@@ -71,7 +71,8 @@ public class SqlDataBase366 {
                             System.out.println("Welcome " + USER.getUsername() + ", Please make a selection: "
                                     + "\n     list - list the availible tests "
                                     + "\n     select [testname] - take a test "
-                                    + "\n     Exit - quit the application");
+                                    + "\n     Exit - quit the application"
+                                    + "\n     Edit - Edit the username and password for the current user");
                             selection = scan.nextLine();
 
                             //For a List, List the test's available
@@ -110,6 +111,64 @@ public class SqlDataBase366 {
                                 takeTest(title, USER.getUser_ID());
 
                             }
+                            
+                            if(selection.toLowerCase().equals("edit")){
+                                System.out.println("What would you like to change?"
+                                        + "\n   User - Username"
+                                        + "\n   Pass - Password");
+                                String selec = scan.nextLine();
+                                
+                                //Edit Username
+                                if(selec.toLowerCase().equals("user")){
+                                    System.out.println("You would like to change your current Username?"
+                                            + "\n   Y - Yes, Continue"
+                                            + "\n   N - Exit");
+                                    String yn = scan.nextLine();
+                                    if(yn.toLowerCase().equals("y")){
+                                        System.out.println("Your current Username is: "+USER.getUsername()+""
+                                                + "\nPlease enter what you would like your username to be:");
+                                        String newUsername = scan.nextLine();
+                                        DBConnect.connectToDatabase();
+                                        String updateNameString = "UPDATE users SET username= ? WHERE user_id = "+USER.getUser_ID();
+                                        PreparedStatement pst = DBConnect.getConnection().prepareStatement(updateNameString);
+                                        pst.setString(1, newUsername);
+                                        try{
+                                        pst.executeQuery();
+                                        }catch(Exception e){
+                                            System.out.println("Change Complete");
+                                        }
+                                        DBConnect.closeConnection();
+                                        break;
+                                    }
+                                }
+                                
+                                //Edit Password
+                                if(selec.toLowerCase().equals("pass")){
+                                    System.out.println("Would you like to change you Password?"
+                                            + "\n   Please be aware of the new password, as it will be required to log back into the system."
+                                            + "\n"
+                                            + "\n   Y - Yes Change my Password"
+                                            + "\n   N - Cancel and Exit");
+                                    String yn = scan.nextLine();
+                                    if(yn.toLowerCase().equals("y")){
+                                        System.out.println("\nYour current Password is: "+USER.getPassword()+""
+                                                + "\n   Please enter your new password:" );
+                                        String newPassword = scan.nextLine();
+                                        DBConnect.connectToDatabase();
+                                        String updatePassString = "UPDATE users SET pass= ? WHERE user_id = "+USER.getUser_ID();
+                                        PreparedStatement pst = DBConnect.getConnection().prepareStatement(updatePassString);
+                                        pst.setString(1,newPassword);
+                                        try{
+                                        pst.executeQuery();
+                                        }catch(Exception e){
+                                            System.out.println("Change Complete");
+                                        }
+                                        DBConnect.closeConnection();
+                                        break;
+                                    }
+                                }
+                            }
+                            
                             System.out.println("\n");
                         } while (!selection.toLowerCase().equals("exit"));
                         //Close Connection after Done
