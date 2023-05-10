@@ -49,9 +49,9 @@ public class SqlDataBase366 {
             do {
                 //Username
                 System.out.println("Welcome! What would you like to do?"
-                        + "\n   Login"
-                        + "\n   Create New Account"
-                        + "\n   Exit Program"
+                        + "\n   Login - Login"
+                        + "\n   New - Create New Account"
+                        + "\n   Exit - Exit Program"
                         + "\n\nPlease type in \"Login\" or \"New\" or \"Exit\" to continue");
                 selection = scan.nextLine();
                 if (selection.toLowerCase().equals("login")) {
@@ -72,7 +72,8 @@ public class SqlDataBase366 {
                                     + "\n     list - list the availible tests "
                                     + "\n     select [testname] - take a test "
                                     + "\n     Exit - quit the application"
-                                    + "\n     Edit - Edit the username and password for the current user");
+                                    + "\n     Edit - Edit the username and password for the current user"
+                                    + "\n     Create - Walks you through creating a test");
                             selection = scan.nextLine();
 
                             //For a List, List the test's available
@@ -167,6 +168,9 @@ public class SqlDataBase366 {
                                         break;
                                     }
                                 }
+                            }
+                            if(selection.toLowerCase().equals("create")){
+                                createTest(USER.getUser_ID());
                             }
                             
                             System.out.println("\n");
@@ -462,15 +466,17 @@ public class SqlDataBase366 {
 
                     if (scan.hasNextInt()) {
                         int pts = scan.nextInt();
+                        scan.nextLine();
                         question.setPoints(pts);
                         totalScore += pts;
                         isValidInput = true;
                     } else {
                         System.out.println("Invalid input. Please enter an integer.");
+                        scan.next();
                     }
                 }
                 
-                boolean correctYet = false;
+                
                 int numAnswers = 0;
                 String anotherA = "";
                 ArrayList<Answer> answers = new ArrayList<>();
@@ -478,21 +484,19 @@ public class SqlDataBase366 {
                 do{
                     Answer answer = new Answer();
                     System.out.println("Enter an answer");
-                    answer.setAnswer_text(scan.nextLine());
-                    if(!correctYet){
-                        System.out.println("Is this the correct answer Enter \"yes\" or \"no\" (there can only be one correct answer for a question)");
+                    String answerText = scan.nextLine();
+                    answer.setAnswer_text(answerText);
+                    
+                        System.out.println("Is this the correct answer Enter \"yes\" or \"no\"");
                         if(scan.nextLine().toLowerCase().equals("yes")){
                             System.out.println("This answer is the correct one for this question.");
-                            correctYet = true;
                             answer.setIs_Correct(true);
                         }
                         else{
                             System.out.println("This answer is not the correct one for this question.");
                             answer.setIs_Correct(false);
                         }
-                    }else{
-                        answer.setIs_Correct(false);
-                    }
+                    
                     answers.add(answer);
                     
                     numAnswers++;
@@ -500,7 +504,7 @@ public class SqlDataBase366 {
                     anotherA = scan.nextLine();
                 } while(anotherA.toLowerCase().equals("yes"));
                 
-                String inQuestionQ = "INSERT INTO question(test_id, question_text, num_answers, points) VALUES( " + test.getTest_name() + ", ?, " + numAnswers + ", " + question.getPoints() + ")";
+                String inQuestionQ = "INSERT INTO question(test_id, question_text, num_answers, points) VALUES( " + test.getTest_ID() + ", ?, " + numAnswers + ", " + question.getPoints() + ")";
                 PreparedStatement inQstmt = DBConnect.getConnection().prepareStatement(inQuestionQ);
                 inQstmt.setString(1, question.getQuestion_text());
                 inQstmt.executeUpdate();
@@ -527,7 +531,9 @@ public class SqlDataBase366 {
             uTstmt.executeUpdate();
         }
 
-        System.out.println("That test already exists.");
+        else{
+            System.out.println("That test already exists.");
+        }
 
         DBConnect.closeConnection();
     }
