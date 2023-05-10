@@ -33,7 +33,7 @@ public class Score {
         this.test_ID = testID;
     }
    
-    public int score(){
+    public int getScore(){
         return score;
     }
     

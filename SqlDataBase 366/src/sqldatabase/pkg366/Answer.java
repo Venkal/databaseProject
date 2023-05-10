@@ -11,7 +11,7 @@ package sqldatabase.pkg366;
  */
 public class Answer {
 
-    public int answer_id;
+    private int answer_id;
     private int question_id;
     private String answer_text;
     private boolean is_correct;

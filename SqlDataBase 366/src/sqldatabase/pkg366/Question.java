@@ -41,6 +41,12 @@ public class Question {
     public void setNum_answers(int num_answers){
         this.num_answers = num_answers;
     }
+    public int getPoints(){
+        return this.points;
+    }
+    public void setPoints(int points){
+        this.points = points;
+    }
     
     
 }
